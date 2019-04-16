@@ -1,0 +1,5 @@
+coub:
+  secrets:
+    access_token: "token"
+  urls:
+    base_url: "http://coub.com"
