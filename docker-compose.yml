@@ -1,0 +1,52 @@
+version: "3"
+
+networks:
+  dev:
+
+volumes:
+  data:
+
+services:
+
+  auvima:
+    container_name: auvima
+    build:
+      args:
+        PROJECT: auvima
+      context: .
+      dockerfile: ./docker/dev.Dockerfile
+    volumes:
+      - ./src:/go/src/auvima/src
+      - ./settings.yaml:/settings.yaml
+    environment:
+      APP_ENV: development
+      SERVER_PORT: 8000
+
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: auvima
+      PGUSER: pguser
+      PGPASSWORD: pguser
+    ports:
+      - 8000:8000
+    networks:
+      - dev
+    depends_on:
+      - postgres
+
+  postgres:
+    container_name: postgres
+    image: postgres:11-alpine
+    volumes:
+      - data:/var/lib/postgresql
+      - ./db:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_USER: pguser
+      POSTGRES_PASSWORD: pguser
+      POSTGRES_DB: auvima
+    ports:
+      - 5432:5432
+    logging:
+      driver: none
+    networks:
+      - dev
