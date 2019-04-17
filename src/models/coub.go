@@ -41,24 +41,30 @@ type (
 		Med []int `json:"med"`
 	}
 
+	ImageVersions struct {
+		Template string   `json:"template"`
+		Versions []string `json:"versions"`
+	}
+
 	Coub struct {
-		Id            int           `json:"id"`
-		Type          string        `json:"type"`
-		Permalink     string        `json:"permalink"`
-		Title         string        `json:"title"`
-		ChannelId     int           `json:"channel_id"`
-		CreatedAt     *time.Time    `json:"created_at"`
-		UpdatedAt     *time.Time    `json:"updated_at"`
-		Duration      float64       `json:"duration"`
-		ViewsCount    int           `json:"views_count"`
-		OriginalSound bool          `json:"original_sound"`
-		HasSound      bool          `json:"has_sound"`
-		FileVersions  *FileVersions `json:"file_versions"`
-		Dimensions    *Dimensions   `json:"dimensions"`
-		AgeRestricted bool          `json:"age_restricted"`
-		AllowReuse    bool          `json:"allow_reuse"`
-		Banned        bool          `json:"banned"`
-		Channel       *Channel      `json:"channel"`
-		Tags          []Tag         `json:"tags"`
+		Id            int            `json:"id"`
+		Type          string         `json:"type"`
+		Permalink     string         `json:"permalink"`
+		Title         string         `json:"title"`
+		ChannelId     int            `json:"channel_id"`
+		CreatedAt     *time.Time     `json:"created_at"`
+		UpdatedAt     *time.Time     `json:"updated_at"`
+		Duration      float64        `json:"duration"`
+		ViewsCount    int            `json:"views_count"`
+		OriginalSound bool           `json:"original_sound"`
+		HasSound      bool           `json:"has_sound"`
+		FileVersions  *FileVersions  `json:"file_versions"`
+		Dimensions    *Dimensions    `json:"dimensions"`
+		ImageVersions *ImageVersions `json:"image_versions"`
+		AgeRestricted bool           `json:"age_restricted"`
+		AllowReuse    bool           `json:"allow_reuse"`
+		Banned        bool           `json:"banned"`
+		Channel       *Channel       `json:"channel"`
+		Tags          []Tag          `json:"tags"`
 	}
 )
