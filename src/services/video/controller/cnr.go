@@ -43,7 +43,7 @@ func (cnr *videoController) GetCoub(permalink string) *models.Coub {
 	return &res
 }
 
-func (cnr *videoController) SaveCoub(permalink string) {
+func (cnr *videoController) SaveCoub(permalink string) *models.Coub {
 	coub := cnr.GetCoub(permalink)
 
 	mp4Path, mp4Link := cnr.GetMediaInfo(coub.Permalink, "mp4", &coub.FileVersions.HTML5.Video)
@@ -57,6 +57,8 @@ func (cnr *videoController) SaveCoub(permalink string) {
 		defer rmAudio()
 		cnr.SaveFinishedVideo(mp4Path, mp3Path, coub)
 	}()
+
+	return coub
 }
 
 func (cnr *videoController) GetMediaInfo(permalink, format string, media *models.Media) (path, link string) {
@@ -71,11 +73,16 @@ func (cnr *videoController) GetMediaInfo(permalink, format string, media *models
 
 func (cnr *videoController) SaveFinishedVideo(mp4Path, mp3Path string, coub *models.Coub) {
 	loopTimes := 1
-	if coub.Duration < 10 {
+	dur := coub.Duration
+	if coub.Duration < 5 {
+		loopTimes = 3
+	} else if coub.Duration < 10 {
 		loopTimes = 2
+	} else if coub.Duration > 20 {
+		dur = 10
 	}
 
-	duration := fmt.Sprintf("%f", coub.Duration*float64(loopTimes))
+	duration := fmt.Sprintf("%f", dur)
 	out := fmt.Sprintf("%s/%s.mp4", cnr.config.Settings.Storage.Finished, coub.Permalink)
 	loop := fmt.Sprintf("loop=%d:size=32767:start=0", loopTimes)
 
@@ -90,4 +97,27 @@ func (cnr *videoController) SaveFinishedVideo(mp4Path, mp3Path string, coub *mod
 
 	err := cmd.Run()
 	helpers.PanicOnError(err)
+}
+
+func (cnr *videoController) GetCoubs(tag, order string, page, perPage int) []models.Coub {
+	var res struct {
+		Page       int           `json:"page"`
+		PerPage    int           `json:"per_page"`
+		TotalPages int           `json:"total_pages"`
+		Coubs      []models.Coub `json:"coubs"`
+	}
+
+	link := fmt.Sprintf("http://coub.com/api/v2/timeline/tag/%s?page=%d&per_page=%d&order_by=%s", tag, page, perPage, order)
+
+	req := cnr.coubClient.NewRequest("GET", link, nil)
+	resp, _ := cnr.coubClient.Do(req)
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	helpers.PanicOnError(err)
+
+	err = json.Unmarshal(body, &res)
+	helpers.PanicOnError(err)
+
+	return res.Coubs
 }

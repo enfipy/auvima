@@ -6,5 +6,6 @@ import (
 
 type Controller interface {
 	GetCoub(permalink string) *models.Coub
-	SaveCoub(permalink string)
+	SaveCoub(permalink string) *models.Coub
+	GetCoubs(tag, order string, page, perPage int) []models.Coub
 }

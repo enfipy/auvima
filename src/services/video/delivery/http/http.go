@@ -19,6 +19,7 @@ func NewDelivery(echo *echoHTTP.Echo, videoController video.Controller) {
 	}
 
 	echo.GET("/api/v1/video/coub", helpers.Handle(server.SaveCoub))
+	echo.GET("/api/v1/video/coubs", helpers.Handle(server.GetCoubs))
 }
 
 func (server *videoServer) SaveCoub(ctx echoHTTP.Context) interface{} {
@@ -27,6 +28,16 @@ func (server *videoServer) SaveCoub(ctx echoHTTP.Context) interface{} {
 		panic(errors.New("Permalink must be provided"))
 	}
 
-	server.videoController.SaveCoub(permalink)
-	return nil
+	coub := server.videoController.SaveCoub(permalink)
+	return coub
+}
+
+func (server *videoServer) GetCoubs(ctx echoHTTP.Context) interface{} {
+	tag := ctx.QueryParam("tag")
+	if tag == "" {
+		panic(errors.New("Tag must be provided"))
+	}
+
+	coubs := server.videoController.GetCoubs(tag, "newest_popular", 1, 10)
+	return coubs
 }
