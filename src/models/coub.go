@@ -36,6 +36,11 @@ type (
 		Value string `json:"value"`
 	}
 
+	Dimensions struct {
+		Big []int `json:"big"`
+		Med []int `json:"med"`
+	}
+
 	Coub struct {
 		Id            int           `json:"id"`
 		Type          string        `json:"type"`
@@ -49,6 +54,7 @@ type (
 		OriginalSound bool          `json:"original_sound"`
 		HasSound      bool          `json:"has_sound"`
 		FileVersions  *FileVersions `json:"file_versions"`
+		Dimensions    *Dimensions   `json:"dimensions"`
 		AgeRestricted bool          `json:"age_restricted"`
 		AllowReuse    bool          `json:"allow_reuse"`
 		Banned        bool          `json:"banned"`

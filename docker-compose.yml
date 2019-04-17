@@ -18,6 +18,7 @@ services:
     volumes:
       - ./src:/go/src/auvima/src
       - ./settings.yaml:/settings.yaml
+      - ./videos:/videos
     environment:
       APP_ENV: development
       SERVER_PORT: 8000

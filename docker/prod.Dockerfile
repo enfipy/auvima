@@ -7,7 +7,8 @@ ARG PROJECT=godev
 WORKDIR /go/src/${PROJECT}/
 
 COPY go.mod go.sum ./
-RUN apk add --no-cache git gcc musl-dev && \
+RUN apk add ca-certificates ffmpeg libva-intel-driver git gcc musl-dev && \
+    apk upgrade && \
     go mod download
 COPY . .
 

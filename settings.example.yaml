@@ -3,3 +3,8 @@ coub:
     access_token: "token"
   urls:
     base_url: "http://coub.com"
+
+storage:
+  tmp: "/videos/tmp"
+  finished: "/videos/finished"
+  static: "/videos/static"

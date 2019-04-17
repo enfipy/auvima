@@ -5,7 +5,8 @@ ARG PROJECT=godev
 
 WORKDIR /go/src/${PROJECT}/
 
-RUN apk add git gcc musl-dev
+RUN apk add ca-certificates ffmpeg libva-intel-driver git gcc musl-dev && \
+    apk upgrade
 
 COPY go.mod go.sum ./
 RUN go mod download && \

@@ -18,15 +18,15 @@ func NewDelivery(echo *echoHTTP.Echo, videoController video.Controller) {
 		videoController: videoController,
 	}
 
-	echo.GET("/api/v1/video/coub", helpers.Handle(server.GetCoub))
+	echo.GET("/api/v1/video/coub", helpers.Handle(server.SaveCoub))
 }
 
-func (server *videoServer) GetCoub(ctx echoHTTP.Context) interface{} {
+func (server *videoServer) SaveCoub(ctx echoHTTP.Context) interface{} {
 	permalink := ctx.QueryParam("permalink")
 	if permalink == "" {
 		panic(errors.New("Permalink must be provided"))
 	}
 
-	coub := server.videoController.GetCoub(permalink)
-	return coub
+	server.videoController.SaveCoub(permalink)
+	return nil
 }

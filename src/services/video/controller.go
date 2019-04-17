@@ -6,4 +6,5 @@ import (
 
 type Controller interface {
 	GetCoub(permalink string) *models.Coub
+	SaveCoub(permalink string)
 }

@@ -24,3 +24,6 @@
 
 # Server settings
 settings.yaml
+
+# Generated videos
+/videos/
