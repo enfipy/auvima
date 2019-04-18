@@ -43,22 +43,19 @@ func (cnr *videoController) GetCoub(permalink string) *models.Coub {
 	return &res
 }
 
-func (cnr *videoController) SaveCoub(permalink string) *models.Coub {
-	coub := cnr.GetCoub(permalink)
-
+func (cnr *videoController) SaveCoub(coub *models.Coub) *models.Video {
 	mp4Path, mp4Link := cnr.GetMediaInfo(coub.Permalink, "mp4", &coub.FileVersions.HTML5.Video)
 	rmVideo := DownloadCoub(mp4Path, mp4Link)
+	defer rmVideo()
 
 	mp3Path, mp3Link := cnr.GetMediaInfo(coub.Permalink, "mp3", &coub.FileVersions.HTML5.Audio)
 	rmAudio := DownloadAudio(mp3Path, mp3Link)
+	defer rmAudio()
 
-	go func() {
-		defer rmVideo()
-		defer rmAudio()
-		cnr.SaveFinishedVideo(mp4Path, mp3Path, coub)
-	}()
+	cnr.SaveFinishedVideo(mp4Path, mp3Path, coub)
+	video := cnr.videoUsecase.SaveCoub(coub.Permalink)
 
-	return coub
+	return video
 }
 
 func (cnr *videoController) GetMediaInfo(permalink, format string, media *models.Media) (path, link string) {
@@ -78,13 +75,14 @@ func (cnr *videoController) SaveFinishedVideo(mp4Path, mp3Path string, coub *mod
 		loopTimes = 3
 	} else if coub.Duration < 10 {
 		loopTimes = 2
+		dur = dur * float64(loopTimes)
 	} else if coub.Duration > 20 {
 		dur = 10
 	}
 
 	duration := fmt.Sprintf("%f", dur)
 	out := fmt.Sprintf("%s/%s.mp4", cnr.config.Settings.Storage.Finished, coub.Permalink)
-	loop := fmt.Sprintf("loop=%d:size=32767:start=0", loopTimes)
+	loop := fmt.Sprintf("loop=%d:size=9999:start=0", loopTimes)
 
 	cmd := exec.Command(
 		"ffmpeg",

@@ -28,7 +28,8 @@ func (server *videoServer) SaveCoub(ctx echoHTTP.Context) interface{} {
 		panic(errors.New("Permalink must be provided"))
 	}
 
-	coub := server.videoController.SaveCoub(permalink)
+	coub := server.videoController.GetCoub(permalink)
+	server.videoController.SaveCoub(coub)
 	return coub
 }
 
@@ -39,5 +40,8 @@ func (server *videoServer) GetCoubs(ctx echoHTTP.Context) interface{} {
 	}
 
 	coubs := server.videoController.GetCoubs(tag, "newest_popular", 1, 10)
+	for _, coub := range coubs {
+		server.videoController.SaveCoub(&coub)
+	}
 	return coubs
 }
