@@ -26,19 +26,44 @@ func NewUsecase(cnfg *config.Config, pc *helpers.PostgresConnection, locker *loc
 	}
 }
 
-func (ucs *videoUsecase) SaveCoub(permalink string) *models.Video {
+func (ucs *videoUsecase) SaveVideo(uniqueId string) *models.Video {
 	video := &models.Video{
 		Id:        uuid.New(),
-		UniqueId:  permalink,
+		UniqueId:  uniqueId,
 		Used:      false,
+		Status:    models.VideoStatus_Normal,
 		CreatedAt: time.Now().Unix(),
 	}
 
 	ucs.pc.Exec(`
 		INSERT INTO videos
-		VALUES($1, $2, $3, $4)
-		`, video.Id, video.UniqueId, video.Used, video.CreatedAt,
+		VALUES($1, $2, $3, $4, $5)
+		`, video.Id, video.UniqueId, video.Used, video.Status, video.CreatedAt,
 	)
 
 	return video
+}
+
+func (ucs *videoUsecase) GetUnusedVideos(limit int32) []models.Video {
+	rows := ucs.pc.QueryMany(`
+		SELECT id, unique_id, used, status, created_at
+		FROM videos
+		WHERE used = FALSE
+		LIMIT $1
+	`, limit)
+	defer rows.Close()
+
+	var videos []models.Video
+	for rows.Next() {
+		video := models.Video{}
+
+		rows.Scan(&video.Id, &video.UniqueId, &video.Used, &video.Status, &video.CreatedAt)
+		if !helpers.ValidateUUID(video.Id) {
+			continue
+		}
+
+		videos = append(videos, video)
+	}
+
+	return videos
 }

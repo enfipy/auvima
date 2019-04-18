@@ -8,3 +8,4 @@ storage:
   tmp: "/videos/tmp"
   finished: "/videos/finished"
   static: "/videos/static"
+  prod: "/videos/prod"

@@ -27,7 +27,8 @@ type (
 
 // Coub
 type Storage struct {
-	Temporary string `yaml:"tmp"`
-	Finished  string `yaml:"finished"`
-	Static    string `yaml:"static"`
+	Temporary  string `yaml:"tmp"`
+	Finished   string `yaml:"finished"`
+	Static     string `yaml:"static"`
+	Production string `yaml:"prod"`
 }

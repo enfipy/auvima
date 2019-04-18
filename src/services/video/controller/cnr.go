@@ -53,7 +53,7 @@ func (cnr *videoController) SaveCoub(coub *models.Coub) *models.Video {
 	defer rmAudio()
 
 	cnr.SaveFinishedVideo(mp4Path, mp3Path, coub)
-	video := cnr.videoUsecase.SaveCoub(coub.Permalink)
+	video := cnr.videoUsecase.SaveVideo(coub.Permalink)
 
 	return video
 }
@@ -73,25 +73,36 @@ func (cnr *videoController) SaveFinishedVideo(mp4Path, mp3Path string, coub *mod
 	dur := coub.Duration
 	if coub.Duration < 5 {
 		loopTimes = 3
+		dur = dur * float64(loopTimes)
 	} else if coub.Duration < 10 {
 		loopTimes = 2
 		dur = dur * float64(loopTimes)
 	} else if coub.Duration > 20 {
 		dur = 10
+		dur = dur * float64(loopTimes)
 	}
 
 	duration := fmt.Sprintf("%f", dur)
 	out := fmt.Sprintf("%s/%s.mp4", cnr.config.Settings.Storage.Finished, coub.Permalink)
-	loop := fmt.Sprintf("loop=%d:size=9999:start=0", loopTimes)
+	loop := fmt.Sprintf("[0:0]split[main][back];"+
+		"[back]scale=1920:1080[scale];"+
+		"[scale]drawbox=x=0:y=0:w=1920:h=1080:color=black:t=1000[draw];"+
+		"[main]scale='if(gt(a,16/9),1920,-1)':'if(gt(a,16/9),-1,1080)'[proc];"+
+		"[draw][proc]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[fhd]; [fhd]setsar=1/1[sarfix];"+
+		"[sarfix]loop=%d:size=9999:start=0",
+		loopTimes,
+	)
 
-	cmd := exec.Command(
-		"ffmpeg",
+	commandArgs := []string{
 		"-i", mp4Path,
 		"-i", mp3Path,
-		"-t", duration,
 		"-filter_complex", loop,
+		"-map", "0", "-map", "1",
+		"-t", duration,
 		"-y", out,
-	)
+	}
+
+	cmd := exec.Command("ffmpeg", commandArgs...)
 
 	err := cmd.Run()
 	helpers.PanicOnError(err)
