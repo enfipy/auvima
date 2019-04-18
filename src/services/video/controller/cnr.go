@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os/exec"
@@ -71,20 +72,16 @@ func (cnr *videoController) GetMediaInfo(permalink, format string, media *models
 func (cnr *videoController) SaveFinishedVideo(mp4Path, mp3Path string, coub *models.Coub) {
 	loopTimes := 1
 	dur := coub.Duration
-	if coub.Duration < 5 {
+	if coub.Duration <= 5 {
 		loopTimes = 3
-		dur = dur * float64(loopTimes)
-	} else if coub.Duration < 10 {
-		loopTimes = 2
 		dur = dur * float64(loopTimes)
 	} else if coub.Duration > 20 {
 		dur = 10
-		dur = dur * float64(loopTimes)
 	}
 
 	duration := fmt.Sprintf("%f", dur)
-	out := fmt.Sprintf("%s/%s.mp4", cnr.config.Settings.Storage.Finished, coub.Permalink)
-	loop := fmt.Sprintf("[0:0]split[main][back];"+
+	out := GetPath(cnr.config.Settings.Storage.Finished, coub.Permalink)
+	filter := fmt.Sprintf("[0:0]split[main][back];"+
 		"[back]scale=1920:1080[scale];"+
 		"[scale]drawbox=x=0:y=0:w=1920:h=1080:color=black:t=1000[draw];"+
 		"[main]scale='if(gt(a,16/9),1920,-1)':'if(gt(a,16/9),-1,1080)'[proc];"+
@@ -96,7 +93,7 @@ func (cnr *videoController) SaveFinishedVideo(mp4Path, mp3Path string, coub *mod
 	commandArgs := []string{
 		"-i", mp4Path,
 		"-i", mp3Path,
-		"-filter_complex", loop,
+		"-filter_complex", filter,
 		"-map", "0", "-map", "1",
 		"-t", duration,
 		"-y", out,
@@ -108,7 +105,7 @@ func (cnr *videoController) SaveFinishedVideo(mp4Path, mp3Path string, coub *mod
 	helpers.PanicOnError(err)
 }
 
-func (cnr *videoController) GetCoubs(tag, order string, page, perPage int) []models.Coub {
+func (cnr *videoController) GetCoubs(_, order string, page, perPage int) []models.Coub {
 	var res struct {
 		Page       int           `json:"page"`
 		PerPage    int           `json:"per_page"`
@@ -116,7 +113,8 @@ func (cnr *videoController) GetCoubs(tag, order string, page, perPage int) []mod
 		Coubs      []models.Coub `json:"coubs"`
 	}
 
-	link := fmt.Sprintf("http://coub.com/api/v2/timeline/tag/%s?page=%d&per_page=%d&order_by=%s", tag, page, perPage, order)
+	// link := fmt.Sprintf("http://coub.com/api/v2/timeline/tag/%s?page=%d&per_page=%d&order_by=%s", tag, page, perPage, order)
+	link := fmt.Sprintf("http://coub.com/api/v2/timeline/hot?page=%d&per_page=%d&order_by=%s", page, perPage, order)
 
 	req := cnr.coubClient.NewRequest("GET", link, nil)
 	resp, _ := cnr.coubClient.Do(req)
@@ -129,4 +127,53 @@ func (cnr *videoController) GetCoubs(tag, order string, page, perPage int) []mod
 	helpers.PanicOnError(err)
 
 	return res.Coubs
+}
+
+func (cnr *videoController) GenerateProductionVideo() {
+	videos := cnr.videoUsecase.GetUnusedVideos(10)
+	if len(videos) <= 0 {
+		panic(errors.New("Can not generate video. No prepared videos"))
+	}
+
+	op := GetPath(cnr.config.Settings.Storage.Static, "op")
+	end := GetPath(cnr.config.Settings.Storage.Static, "end")
+	frame25 := GetPath(cnr.config.Settings.Storage.Static, "25frame")
+
+	commandArgs := []string{"-i", op}
+	for _, video := range videos {
+		path := GetPath(cnr.config.Settings.Storage.Finished, video.UniqueId)
+		commandArgs = append(commandArgs, "-i", path, "-i", frame25)
+	}
+	commandArgs = commandArgs[:len(commandArgs)-2]
+	commandArgs = append(commandArgs, "-i", end)
+
+	// Todo: Fix this ugly place
+	count := 0
+	for _, str := range commandArgs {
+		if str == "-i" {
+			count++
+		}
+	}
+
+	// Todo: Get name based on unique ids
+	name, err := helpers.GenRandString(5)
+	helpers.PanicOnError(err)
+
+	// Todo: Make special quality for youtube
+	out := GetPath(cnr.config.Settings.Storage.Production, name)
+	filter := fmt.Sprintf("concat=n=%d:v=1:a=1[v][a]", count)
+
+	commandArgs = append(
+		commandArgs,
+		"-map", "[v]",
+		"-map", "[a]",
+		"-filter_complex", filter,
+		"-y", out,
+	)
+	cmd := exec.Command("ffmpeg", commandArgs...)
+
+	err = cmd.Run()
+	helpers.PanicOnError(err)
+
+	// Todo: Update video. Set used = true
 }

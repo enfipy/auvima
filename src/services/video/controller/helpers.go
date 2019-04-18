@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -46,4 +47,8 @@ func DownloadAudio(path, link string) func() {
 	return func() {
 		os.Remove(path)
 	}
+}
+
+func GetPath(storagePath, fileName string) string {
+	return fmt.Sprintf("%s/%s.mp4", storagePath, fileName)
 }

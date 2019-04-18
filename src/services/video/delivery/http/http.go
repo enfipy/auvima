@@ -20,6 +20,7 @@ func NewDelivery(echo *echoHTTP.Echo, videoController video.Controller) {
 
 	echo.GET("/api/v1/video/coub", helpers.Handle(server.SaveCoub))
 	echo.GET("/api/v1/video/coubs", helpers.Handle(server.GetCoubs))
+	echo.GET("/api/v1/video/gen", helpers.Handle(server.GenerateVideo))
 }
 
 func (server *videoServer) SaveCoub(ctx echoHTTP.Context) interface{} {
@@ -44,4 +45,9 @@ func (server *videoServer) GetCoubs(ctx echoHTTP.Context) interface{} {
 		server.videoController.SaveCoub(&coub)
 	}
 	return coubs
+}
+
+func (server *videoServer) GenerateVideo(_ echoHTTP.Context) interface{} {
+	server.videoController.GenerateProductionVideo()
+	return nil
 }

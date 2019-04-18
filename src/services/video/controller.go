@@ -7,4 +7,5 @@ type Controller interface {
 	SaveCoub(coub *models.Coub) *models.Video
 	GetCoubs(tag, order string, page, perPage int) []models.Coub
 	SaveFinishedVideo(mp4Path, mp3Path string, coub *models.Coub)
+	GenerateProductionVideo()
 }

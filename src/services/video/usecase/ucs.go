@@ -49,6 +49,7 @@ func (ucs *videoUsecase) GetUnusedVideos(limit int32) []models.Video {
 		SELECT id, unique_id, used, status, created_at
 		FROM videos
 		WHERE used = FALSE
+		ORDER BY RANDOM()
 		LIMIT $1
 	`, limit)
 	defer rows.Close()
