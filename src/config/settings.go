@@ -3,8 +3,9 @@ package config
 /* Settings */
 
 type Settings struct {
-	Coub    Coub    `yaml:"coub"`
-	Storage Storage `yaml:"storage"`
+	Coub      Coub      `yaml:"coub"`
+	Instagram Instagram `yaml:"instagram"`
+	Storage   Storage   `yaml:"storage"`
 }
 
 /* Inner structs */
@@ -25,7 +26,21 @@ type (
 	}
 )
 
-// Coub
+// Instagram
+type (
+	Instagram struct {
+		CredsPath        string `yaml:"creds_path"`
+		Creds            Creds  `yaml:"creds"`
+		SuitabilityHours uint64 `yaml:"suitability_hours"`
+	}
+
+	Creds struct {
+		Username string `yaml:"username"`
+		Password string `yaml:"password"`
+	}
+)
+
+// Storage
 type Storage struct {
 	Temporary  string `yaml:"tmp"`
 	Finished   string `yaml:"finished"`

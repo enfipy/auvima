@@ -22,11 +22,21 @@ func InitServices(cnfg *config.Config) (*echo.Echo, func()) {
 	locker := locker.Initialize()
 	echo := helpers.InitHttp()
 	pc := helpers.InitPostgres()
-	coubClient := helpers.InitCoubClient(cnfg.Settings.Coub.Urls.BaseUrl, cnfg.Settings.Coub.Secrets.AccessToken)
+	coubClient := helpers.InitCoubClient(
+		cnfg.Settings.Coub.Urls.BaseUrl,
+		cnfg.Settings.Coub.Secrets.AccessToken,
+	)
+	instaClient := helpers.InitInstagramClient(
+		cnfg.Settings.Instagram.Creds.Username,
+		cnfg.Settings.Instagram.Creds.Password,
+		cnfg.Settings.Instagram.CredsPath,
+	)
 
 	videoUcs := videoUsecase.NewUsecase(cnfg, pc, locker)
-	videoCnr := videoController.NewController(cnfg, videoUcs, coubClient)
+	videoCnr := videoController.NewController(cnfg, videoUcs, coubClient, instaClient)
 	videoDeliveryHttp.NewDelivery(echo, videoCnr)
+
+	videoCnr.GetInstagramVideos("gazzo.if", 10)
 
 	return echo, func() {}
 }

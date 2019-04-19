@@ -4,6 +4,13 @@ coub:
   urls:
     base_url: "http://coub.com"
 
+instagram:
+  creds_path: /path/auth.json
+  creds:
+    login: "login"
+    password: "password"
+  suitability_time: 24
+
 storage:
   tmp: "/videos/tmp"
   finished: "/videos/finished"

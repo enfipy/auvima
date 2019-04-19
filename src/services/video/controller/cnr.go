@@ -5,25 +5,35 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os/exec"
+	"strconv"
+	"time"
 
 	"github.com/enfipy/auvima/src/config"
 	"github.com/enfipy/auvima/src/helpers"
 	"github.com/enfipy/auvima/src/models"
 	"github.com/enfipy/auvima/src/services/video"
+
+	goinsta "github.com/ahmdrz/goinsta/v2"
 )
 
 type videoController struct {
 	config       *config.Config
 	videoUsecase video.Usecase
-	coubClient   *helpers.CoubClient
+
+	coubClient  *helpers.CoubClient
+	instaClient *goinsta.Instagram
 }
 
-func NewController(cnfg *config.Config, videoUsecase video.Usecase, coubClient *helpers.CoubClient) video.Controller {
+func NewController(
+	cnfg *config.Config, videoUsecase video.Usecase, coubClient *helpers.CoubClient, instaClient *goinsta.Instagram,
+) video.Controller {
 	return &videoController{
 		config:       cnfg,
 		videoUsecase: videoUsecase,
 		coubClient:   coubClient,
+		instaClient:  instaClient,
 	}
 }
 
@@ -176,4 +186,32 @@ func (cnr *videoController) GenerateProductionVideo() {
 	helpers.PanicOnError(err)
 
 	// Todo: Update video. Set used = true
+}
+
+func (cnr *videoController) GetInstagramVideos(username string, limit int32) []models.Video {
+	user, err := cnr.instaClient.Profiles.ByName(username)
+	helpers.PanicOnError(err)
+
+	sh := time.Duration(cnr.config.Settings.Instagram.SuitabilityHours)
+	timestamp := time.Now().Add(-sh * time.Hour).Unix()
+	from := strconv.FormatInt(timestamp, 10)
+
+	media := user.Feed(from)
+	helpers.PanicOnError(err)
+
+	videos := map[string]string{}
+	for media.Next() {
+		for _, item := range media.Items {
+			if len(item.Videos) != 0 {
+				for _, itemVideo := range item.Videos {
+					videos[item.Code] = itemVideo.URL
+				}
+			}
+		}
+	}
+
+	// Todo: Download, generate and save video
+	log.Print(videos, limit)
+
+	return nil
 }
