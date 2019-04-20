@@ -7,6 +7,8 @@ import (
 	"os"
 
 	"github.com/enfipy/auvima/src/helpers"
+
+	goinsta "github.com/ahmdrz/goinsta/v2"
 )
 
 func DownloadCoub(path, link string) func() {
@@ -32,7 +34,7 @@ func DownloadCoub(path, link string) func() {
 	}
 }
 
-func DownloadAudio(path, link string) func() {
+func DownloadFile(path, link string) func() {
 	out, err := os.Create(path)
 	helpers.PanicOnError(err)
 	defer out.Close()
@@ -51,4 +53,23 @@ func DownloadAudio(path, link string) func() {
 
 func GetPath(storagePath, fileName string) string {
 	return fmt.Sprintf("%s/%s.mp4", storagePath, fileName)
+}
+
+func GetVideosFromInstagramUser(user *goinsta.User, from string, limit int) map[string]string {
+	media := user.Feed(from)
+	videos := map[string]string{}
+	for media.Next() {
+		for _, item := range media.Items {
+			if len(item.Videos) != 0 {
+				for _, itemVideo := range item.Videos {
+					if len(videos) >= limit {
+						return videos
+					}
+
+					videos[item.Code] = itemVideo.URL
+				}
+			}
+		}
+	}
+	return videos
 }

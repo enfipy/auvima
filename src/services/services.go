@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"log"
 
 	"github.com/enfipy/auvima/src/config"
 	"github.com/enfipy/auvima/src/helpers"
@@ -36,7 +37,8 @@ func InitServices(cnfg *config.Config) (*echo.Echo, func()) {
 	videoCnr := videoController.NewController(cnfg, videoUcs, coubClient, instaClient)
 	videoDeliveryHttp.NewDelivery(echo, videoCnr)
 
-	videoCnr.GetInstagramVideos("gazzo.if", 10)
+	videos := videoCnr.GetInstagramVideos("crust.mp4", 0)
+	log.Print(videos == nil)
 
 	return echo, func() {}
 }

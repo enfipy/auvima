@@ -9,7 +9,7 @@ instagram:
   creds:
     login: "login"
     password: "password"
-  suitability_time: 24
+  suitability_time: 96
 
 storage:
   tmp: "/videos/tmp"

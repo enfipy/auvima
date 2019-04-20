@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
-	"os/exec"
 	"strconv"
 	"time"
 
@@ -60,23 +58,13 @@ func (cnr *videoController) SaveCoub(coub *models.Coub) *models.Video {
 	defer rmVideo()
 
 	mp3Path, mp3Link := cnr.GetMediaInfo(coub.Permalink, "mp3", &coub.FileVersions.HTML5.Audio)
-	rmAudio := DownloadAudio(mp3Path, mp3Link)
+	rmAudio := DownloadFile(mp3Path, mp3Link)
 	defer rmAudio()
 
 	cnr.SaveFinishedVideo(mp4Path, mp3Path, coub)
-	video := cnr.videoUsecase.SaveVideo(coub.Permalink)
+	video := cnr.videoUsecase.SaveVideo(coub.Permalink, models.VideoOrigin_Coub)
 
 	return video
-}
-
-func (cnr *videoController) GetMediaInfo(permalink, format string, media *models.Media) (path, link string) {
-	if media.High != nil {
-		link = media.High.URL
-	} else {
-		link = media.Med.URL
-	}
-	path = fmt.Sprintf("%s/%s.%s", cnr.config.Settings.Storage.Temporary, permalink, format)
-	return
 }
 
 func (cnr *videoController) SaveFinishedVideo(mp4Path, mp3Path string, coub *models.Coub) {
@@ -89,33 +77,10 @@ func (cnr *videoController) SaveFinishedVideo(mp4Path, mp3Path string, coub *mod
 		dur = 10
 	}
 
-	duration := fmt.Sprintf("%f", dur)
-	out := GetPath(cnr.config.Settings.Storage.Finished, coub.Permalink)
-	filter := fmt.Sprintf("[0:0]split[main][back];"+
-		"[back]scale=1920:1080[scale];"+
-		"[scale]drawbox=x=0:y=0:w=1920:h=1080:color=black:t=1000[draw];"+
-		"[main]scale='if(gt(a,16/9),1920,-1)':'if(gt(a,16/9),-1,1080)'[proc];"+
-		"[draw][proc]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[fhd]; [fhd]setsar=1/1[sarfix];"+
-		"[sarfix]loop=%d:size=9999:start=0",
-		loopTimes,
-	)
-
-	commandArgs := []string{
-		"-i", mp4Path,
-		"-i", mp3Path,
-		"-filter_complex", filter,
-		"-map", "0", "-map", "1",
-		"-t", duration,
-		"-y", out,
-	}
-
-	cmd := exec.Command("ffmpeg", commandArgs...)
-
-	err := cmd.Run()
-	helpers.PanicOnError(err)
+	cnr.ScaleAndLoopVideo(mp4Path, mp3Path, coub.Permalink, dur, loopTimes)
 }
 
-func (cnr *videoController) GetCoubs(_, order string, page, perPage int) []models.Coub {
+func (cnr *videoController) GetCoubs(tag, order string, page, perPage int) []models.Coub {
 	var res struct {
 		Page       int           `json:"page"`
 		PerPage    int           `json:"per_page"`
@@ -123,8 +88,7 @@ func (cnr *videoController) GetCoubs(_, order string, page, perPage int) []model
 		Coubs      []models.Coub `json:"coubs"`
 	}
 
-	// link := fmt.Sprintf("http://coub.com/api/v2/timeline/tag/%s?page=%d&per_page=%d&order_by=%s", tag, page, perPage, order)
-	link := fmt.Sprintf("http://coub.com/api/v2/timeline/hot?page=%d&per_page=%d&order_by=%s", page, perPage, order)
+	link := fmt.Sprintf("http://coub.com/api/v2/timeline/tag/%s?page=%d&per_page=%d&order_by=%s", tag, page, perPage, order)
 
 	req := cnr.coubClient.NewRequest("GET", link, nil)
 	resp, _ := cnr.coubClient.Do(req)
@@ -149,46 +113,12 @@ func (cnr *videoController) GenerateProductionVideo() {
 	end := GetPath(cnr.config.Settings.Storage.Static, "end")
 	frame25 := GetPath(cnr.config.Settings.Storage.Static, "25frame")
 
-	commandArgs := []string{"-i", op}
-	for _, video := range videos {
-		path := GetPath(cnr.config.Settings.Storage.Finished, video.UniqueId)
-		commandArgs = append(commandArgs, "-i", path, "-i", frame25)
-	}
-	commandArgs = commandArgs[:len(commandArgs)-2]
-	commandArgs = append(commandArgs, "-i", end)
-
-	// Todo: Fix this ugly place
-	count := 0
-	for _, str := range commandArgs {
-		if str == "-i" {
-			count++
-		}
-	}
-
-	// Todo: Get name based on unique ids
-	name, err := helpers.GenRandString(5)
-	helpers.PanicOnError(err)
-
-	// Todo: Make special quality for youtube
-	out := GetPath(cnr.config.Settings.Storage.Production, name)
-	filter := fmt.Sprintf("concat=n=%d:v=1:a=1[v][a]", count)
-
-	commandArgs = append(
-		commandArgs,
-		"-map", "[v]",
-		"-map", "[a]",
-		"-filter_complex", filter,
-		"-y", out,
-	)
-	cmd := exec.Command("ffmpeg", commandArgs...)
-
-	err = cmd.Run()
-	helpers.PanicOnError(err)
+	cnr.ConcatVideo(videos, op, end, frame25)
 
 	// Todo: Update video. Set used = true
 }
 
-func (cnr *videoController) GetInstagramVideos(username string, limit int32) []models.Video {
+func (cnr *videoController) GetInstagramVideos(username string, limit int) []models.Video {
 	user, err := cnr.instaClient.Profiles.ByName(username)
 	helpers.PanicOnError(err)
 
@@ -196,22 +126,14 @@ func (cnr *videoController) GetInstagramVideos(username string, limit int32) []m
 	timestamp := time.Now().Add(-sh * time.Hour).Unix()
 	from := strconv.FormatInt(timestamp, 10)
 
-	media := user.Feed(from)
-	helpers.PanicOnError(err)
+	videos := GetVideosFromInstagramUser(user, from, limit)
 
-	videos := map[string]string{}
-	for media.Next() {
-		for _, item := range media.Items {
-			if len(item.Videos) != 0 {
-				for _, itemVideo := range item.Videos {
-					videos[item.Code] = itemVideo.URL
-				}
-			}
-		}
+	var savedVideos []models.Video
+	for uniqueId, url := range videos {
+		cnr.ScaleVideo(uniqueId, url)
+		video := cnr.videoUsecase.SaveVideo(uniqueId, models.VideoOrigin_Instagram)
+		savedVideos = append(savedVideos, *video)
 	}
 
-	// Todo: Download, generate and save video
-	log.Print(videos, limit)
-
-	return nil
+	return savedVideos
 }
