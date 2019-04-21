@@ -14,6 +14,13 @@ instagram:
     - instagram
   material_count_to_fetch: 5
 
+youtube:
+  creds:
+    access_token: "token"
+    token_type: "Bearer"
+    refresh_token: "token"
+    expiry: 3600
+
 storage:
   tmp: "/videos/tmp"
   finished: "/videos/finished"
@@ -21,6 +28,11 @@ storage:
   prod: "/videos/prod"
 
 video:
+  title: "title %d"
+  category_id: "22"
+  privacy: "unlisted"
+  tags: "people,video"
+  description: "Description"
   length: 300000
   timings:
     fetch_material: "0 * * * * *"

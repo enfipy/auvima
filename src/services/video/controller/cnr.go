@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
+	"os"
 	"strconv"
 	"time"
 
@@ -15,24 +15,29 @@ import (
 	"github.com/enfipy/auvima/src/services/video"
 
 	goinsta "github.com/ahmdrz/goinsta/v2"
+	youtube "google.golang.org/api/youtube/v3"
 )
 
 type videoController struct {
 	config       *config.Config
 	videoUsecase video.Usecase
 
-	coubClient  *helpers.CoubClient
-	instaClient *goinsta.Instagram
+	coubClient    *helpers.CoubClient
+	instaClient   *goinsta.Instagram
+	youtubeClient *youtube.Service
 }
 
 func NewController(
-	cnfg *config.Config, videoUsecase video.Usecase, coubClient *helpers.CoubClient, instaClient *goinsta.Instagram,
+	cnfg *config.Config, videoUsecase video.Usecase, coubClient *helpers.CoubClient,
+	instaClient *goinsta.Instagram, youtubeClient *youtube.Service,
 ) video.Controller {
 	return &videoController{
 		config:       cnfg,
 		videoUsecase: videoUsecase,
-		coubClient:   coubClient,
-		instaClient:  instaClient,
+
+		coubClient:    coubClient,
+		instaClient:   instaClient,
+		youtubeClient: youtubeClient,
 	}
 }
 
@@ -125,17 +130,25 @@ func (cnr *videoController) GenerateProductionVideo() *models.Production {
 		currentDuration += video.Duration
 	}
 	if currentDuration < cnr.config.Settings.Video.Length {
-		panic(errors.New("Not enough material to generate valid duration video"))
+		msg := fmt.Sprintf("Not enough material to generate valid duration video %d ms", currentDuration)
+		panic(errors.New(msg))
 	}
 
 	videos = videos[:currentVideosLenth]
-	name, duration := cnr.ConcatVideo(videos, op, end, frame25)
+	if len(videos) <= 0 {
+		panic(errors.New("Not enough videos"))
+	}
 
+	duration := cnr.ConcatVideo(videos, op, end, frame25)
+
+	nextProductionVideoId := cnr.videoUsecase.GetProductionVideoCount()
+	nextProductionVideoId++
 	for _, video := range videos {
-		cnr.videoUsecase.UseVideo(video.UniqueId)
+		cnr.videoUsecase.UseVideo(video.UniqueId, uint32(nextProductionVideoId))
 		cnr.RemoveVideo(video.UniqueId)
 	}
-	prod := cnr.videoUsecase.SaveProd(name, duration)
+
+	prod := cnr.videoUsecase.SaveProd(duration)
 	return prod
 }
 
@@ -159,6 +172,25 @@ func (cnr *videoController) GetInstagramVideos(username string, limit int) []mod
 	return savedVideos
 }
 
-func (cnr *videoController) UploadVideo() {
-	log.Print("Todo: Upload video")
+func (cnr *videoController) UploadVideo() string {
+	prod := cnr.videoUsecase.GetNextProductionVideo()
+	if prod == nil {
+		panic(errors.New("Production video to upload not found"))
+	}
+
+	videos := cnr.videoUsecase.GetVideosByUsedIn(prod.Id)
+	upload, filename := cnr.PrepareYoutubeVideo(prod.Id, videos)
+
+	call := cnr.youtubeClient.Videos.Insert("snippet,status", upload)
+
+	file, err := os.Open(filename)
+	defer file.Close()
+	helpers.PanicOnError(err)
+
+	response, err := call.Media(file).Do()
+	helpers.PanicOnError(err)
+
+	cnr.videoUsecase.UseProduction(prod.Id)
+
+	return response.Id
 }

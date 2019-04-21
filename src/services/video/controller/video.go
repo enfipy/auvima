@@ -3,9 +3,12 @@ package controller
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/enfipy/auvima/src/helpers"
 	"github.com/enfipy/auvima/src/models"
+	youtube "google.golang.org/api/youtube/v3"
 
 	goinsta "github.com/ahmdrz/goinsta/v2"
 )
@@ -86,7 +89,7 @@ func (cnr *videoController) ScaleAndLoopVideo(mp4Path, mp3Path, uniqueId string,
 	return durations[0]
 }
 
-func (cnr *videoController) ConcatVideo(videos []models.Video, op, end, frame25 string) (string, int64) {
+func (cnr *videoController) ConcatVideo(videos []models.Video, op, end, frame25 string) int64 {
 	commandArgs := []string{"-i", op}
 	for _, video := range videos {
 		path := helpers.GetPath(cnr.config.Settings.Storage.Finished, video.UniqueId)
@@ -102,9 +105,9 @@ func (cnr *videoController) ConcatVideo(videos []models.Video, op, end, frame25 
 		}
 	}
 
-	// Todo: Get name based on unique ids
-	name, err := helpers.GenRandString(5)
-	helpers.PanicOnError(err)
+	productionVideoCount := cnr.videoUsecase.GetProductionVideoCount()
+	productionVideoCount++
+	name := strconv.FormatInt(productionVideoCount, 10)
 
 	out := helpers.GetPath(cnr.config.Settings.Storage.Production, name)
 	filter := fmt.Sprintf("concat=n=%d:v=1:a=1[v][a]", inputCount)
@@ -125,7 +128,7 @@ func (cnr *videoController) ConcatVideo(videos []models.Video, op, end, frame25 
 	}
 	helpers.PanicOnError(err)
 
-	return name, durations[0]
+	return durations[0]
 }
 
 func (cnr *videoController) GetVideosFromInstagramUser(user *goinsta.User, from string, limit int) map[string]string {
@@ -158,4 +161,39 @@ func (cnr *videoController) RemoveVideo(uniqueId string) {
 	path := helpers.GetPath(cnr.config.Settings.Storage.Finished, uniqueId)
 	err := os.Remove(path)
 	helpers.PanicOnError(err)
+}
+
+func (cnr *videoController) PrepareYoutubeVideo(videoNumber uint32, videos []models.Video) (*youtube.Video, string) {
+	videoCnfg := cnr.config.Settings.Video
+
+	title := fmt.Sprintf(videoCnfg.Title, videoNumber)
+	filename := helpers.GetPath(
+		cnr.config.Settings.Storage.Production,
+		strconv.FormatInt(int64(videoNumber), 10),
+	)
+
+	var links string
+	for _, video := range videos {
+		if video.Origin == models.VideoOrigin_Coub {
+			links += "\nhttps://coub.com/view/" + video.UniqueId
+		}
+		if video.Origin == models.VideoOrigin_Instagram {
+			links += "\nhttps://www.instagram.com/p/" + video.UniqueId
+		}
+	}
+	description := videoCnfg.Description + links
+
+	video := &youtube.Video{
+		Snippet: &youtube.VideoSnippet{
+			Title:       title,
+			Description: description,
+			CategoryId:  videoCnfg.CategoryId,
+			Tags:        strings.Split(videoCnfg.Tags, ","),
+		},
+		Status: &youtube.VideoStatus{
+			PrivacyStatus: videoCnfg.Privacy,
+		},
+	}
+
+	return video, filename
 }

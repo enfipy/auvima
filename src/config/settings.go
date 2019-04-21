@@ -5,6 +5,7 @@ package config
 type Settings struct {
 	Coub      Coub      `yaml:"coub"`
 	Instagram Instagram `yaml:"instagram"`
+	Youtube   Youtube   `yaml:"youtube"`
 	Storage   Storage   `yaml:"storage"`
 	Video     Video     `yaml:"video"`
 }
@@ -30,16 +31,30 @@ type (
 // Instagram
 type (
 	Instagram struct {
-		CredsPath            string   `yaml:"creds_path"`
-		Creds                Creds    `yaml:"creds"`
-		SuitabilityHours     uint64   `yaml:"suitability_hours"`
-		MaterialAccounts     []string `yaml:"material_accounts"`
-		MaterialCountToFetch uint32   `yaml:"material_count_to_fetch"`
+		CredsPath            string         `yaml:"creds_path"`
+		Creds                InstagramCreds `yaml:"creds"`
+		SuitabilityHours     uint64         `yaml:"suitability_hours"`
+		MaterialAccounts     []string       `yaml:"material_accounts"`
+		MaterialCountToFetch uint32         `yaml:"material_count_to_fetch"`
 	}
 
-	Creds struct {
+	InstagramCreds struct {
 		Username string `yaml:"username"`
 		Password string `yaml:"password"`
+	}
+)
+
+// Youtube
+type (
+	Youtube struct {
+		Creds YoutubeCreds `yaml:"creds"`
+	}
+
+	YoutubeCreds struct {
+		AccessToken  string `yaml:"access_token"`
+		TokenType    string `yaml:"token_type"`
+		RefreshToken string `yaml:"refresh_token"`
+		Expiry       uint64 `yaml:"expiry"`
 	}
 )
 
@@ -54,8 +69,13 @@ type Storage struct {
 // Video
 type (
 	Video struct {
-		Length  int64   `yaml:"length"`
-		Timings Timings `yaml:"timings"`
+		Title       string  `yaml:"title"`
+		CategoryId  string  `yaml:"category_id"`
+		Privacy     string  `yaml:"privacy"`
+		Tags        string  `yaml:"tags"`
+		Description string  `yaml:"description"`
+		Length      int64   `yaml:"length"`
+		Timings     Timings `yaml:"timings"`
 	}
 
 	Timings struct {

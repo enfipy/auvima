@@ -1,10 +1,8 @@
 package models
 
-import "github.com/google/uuid"
-
 type Production struct {
-	Id        uuid.UUID
-	UniqueId  string
+	Id        uint32
 	Duration  int64
+	Used      bool
 	CreatedAt int64
 }

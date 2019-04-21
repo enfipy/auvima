@@ -1,12 +1,10 @@
 package models
 
-import "github.com/google/uuid"
-
 type Video struct {
-	Id uuid.UUID
+	Id uint32
 
 	UniqueId string
-	Used     bool
+	UsedIn   *uint32
 	Duration int64
 
 	Status VideoStatus

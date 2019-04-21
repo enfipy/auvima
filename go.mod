@@ -5,7 +5,6 @@ require (
 	github.com/badoux/checkmail v0.0.0-20181210160741-9661bd69e9ad
 	github.com/cheggaaa/pb v2.0.6+incompatible // indirect
 	github.com/cockroachdb/apd v1.1.0 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/enfipy/locker v1.0.0
 	github.com/golang/protobuf v1.3.1 // indirect
@@ -30,6 +29,7 @@ require (
 	golang.org/x/net v0.0.0-20190419010253-1f3472d942ba // indirect
 	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a
 	golang.org/x/sys v0.0.0-20190418153312-f0ce4c0180be // indirect
+	google.golang.org/api v0.3.2
 	google.golang.org/appengine v1.5.0 // indirect
 	gopkg.in/VividCortex/ewma.v1 v1.1.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
