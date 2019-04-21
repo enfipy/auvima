@@ -30,10 +30,11 @@ type (
 // Instagram
 type (
 	Instagram struct {
-		CredsPath        string   `yaml:"creds_path"`
-		Creds            Creds    `yaml:"creds"`
-		SuitabilityHours uint64   `yaml:"suitability_hours"`
-		MaterialAccounts []string `yaml:"material_accounts"`
+		CredsPath            string   `yaml:"creds_path"`
+		Creds                Creds    `yaml:"creds"`
+		SuitabilityHours     uint64   `yaml:"suitability_hours"`
+		MaterialAccounts     []string `yaml:"material_accounts"`
+		MaterialCountToFetch uint32   `yaml:"material_count_to_fetch"`
 	}
 
 	Creds struct {
@@ -51,6 +52,15 @@ type Storage struct {
 }
 
 // Video
-type Video struct {
-	Length int64 `yaml:"length"`
-}
+type (
+	Video struct {
+		Length  int64   `yaml:"length"`
+		Timings Timings `yaml:"timings"`
+	}
+
+	Timings struct {
+		FetchMaterial           string `yaml:"fetch_material"`
+		GenerateProductionVideo string `yaml:"generate_production_video"`
+		UploadVideo             string `yaml:"upload_video"`
+	}
+)

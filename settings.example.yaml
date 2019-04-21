@@ -12,6 +12,7 @@ instagram:
   suitability_time: 96
   material_accounts:
     - instagram
+  material_count_to_fetch: 5
 
 storage:
   tmp: "/videos/tmp"
@@ -21,3 +22,7 @@ storage:
 
 video:
   length: 300000
+  timings:
+    fetch_material: "0 * * * * *"
+    generate_production_video: "0 * * * * *"
+    upload_video: "0 * * * * *"

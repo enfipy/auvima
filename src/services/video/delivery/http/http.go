@@ -1,4 +1,4 @@
-package delivery
+package http
 
 import (
 	"errors"
@@ -17,7 +17,7 @@ type videoServer struct {
 	videoController video.Controller
 }
 
-func NewDelivery(echo *echoHTTP.Echo, config *config.Config, videoController video.Controller) {
+func NewHttp(echo *echoHTTP.Echo, config *config.Config, videoController video.Controller) {
 	server := &videoServer{
 		config:          config,
 		videoController: videoController,

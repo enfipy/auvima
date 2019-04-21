@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"strconv"
 	"time"
 
@@ -156,4 +157,8 @@ func (cnr *videoController) GetInstagramVideos(username string, limit int) []mod
 	}
 
 	return savedVideos
+}
+
+func (cnr *videoController) UploadVideo() {
+	log.Print("Todo: Upload video")
 }

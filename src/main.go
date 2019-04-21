@@ -26,11 +26,7 @@ func main() {
 	}
 	defer lis.Close()
 
-	echo, close := services.InitServices(cnfg)
+	start, close := services.InitServices(cnfg)
 	go helpers.GracefulShutdown(close)
-
-	echo.Listener = lis
-	if err := echo.Start(""); err != nil {
-		log.Fatalf("Failed to serve: %v", err)
-	}
+	start(lis)
 }
