@@ -25,8 +25,8 @@ func NewDelivery(echo *echoHTTP.Echo, config *config.Config, videoController vid
 
 	echo.GET("/api/v1/video/coub", helpers.Handle(server.SaveCoub))
 	echo.GET("/api/v1/video/coubs", helpers.Handle(server.GetCoubs))
-	echo.GET("/api/v1/video/gen", helpers.Handle(server.GenerateVideo))
 	echo.GET("/api/v1/video/instagram", helpers.Handle(server.GetInstagramVideos))
+	echo.GET("/api/v1/video/gen", helpers.Handle(server.GenerateVideo))
 }
 
 func (server *videoServer) SaveCoub(ctx echoHTTP.Context) interface{} {

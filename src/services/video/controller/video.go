@@ -28,11 +28,11 @@ func (cnr *videoController) ScaleVideo(uniqueId, url string) int64 {
 		"[draw][proc]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[fhd];" +
 		"[fhd]setsar=1/1[sarfix]"
 
-	path := fmt.Sprintf("%s/%s.mp4", cnr.config.Settings.Storage.Temporary, uniqueId)
-	rmFile := DownloadFile(path, url)
+	path := helpers.GetPath(cnr.config.Settings.Storage.Temporary, uniqueId)
+	rmFile := helpers.DownloadFile(path, url)
 	defer rmFile()
 
-	out := GetPath(cnr.config.Settings.Storage.Finished, uniqueId)
+	out := helpers.GetPath(cnr.config.Settings.Storage.Finished, uniqueId)
 	commandArgs := []string{
 		"-i", path,
 		"-filter_complex", filter,
@@ -54,7 +54,7 @@ func (cnr *videoController) ScaleVideo(uniqueId, url string) int64 {
 
 func (cnr *videoController) ScaleAndLoopVideo(mp4Path, mp3Path, uniqueId string, dur float64, loopTimes int) int64 {
 	duration := fmt.Sprintf("%f", dur)
-	out := GetPath(cnr.config.Settings.Storage.Finished, uniqueId)
+	out := helpers.GetPath(cnr.config.Settings.Storage.Finished, uniqueId)
 	filter := fmt.Sprintf("[0:0]split[main][back];"+
 		"[back]scale=1920:1080[scale];"+
 		"[scale]drawbox=x=0:y=0:w=1920:h=1080:color=black:t=1000[draw];"+
@@ -89,7 +89,7 @@ func (cnr *videoController) ScaleAndLoopVideo(mp4Path, mp3Path, uniqueId string,
 func (cnr *videoController) ConcatVideo(videos []models.Video, op, end, frame25 string) (string, int64) {
 	commandArgs := []string{"-i", op}
 	for _, video := range videos {
-		path := GetPath(cnr.config.Settings.Storage.Finished, video.UniqueId)
+		path := helpers.GetPath(cnr.config.Settings.Storage.Finished, video.UniqueId)
 		commandArgs = append(commandArgs, "-i", path, "-i", frame25)
 	}
 	commandArgs = commandArgs[:len(commandArgs)-2]
@@ -106,7 +106,7 @@ func (cnr *videoController) ConcatVideo(videos []models.Video, op, end, frame25 
 	name, err := helpers.GenRandString(5)
 	helpers.PanicOnError(err)
 
-	out := GetPath(cnr.config.Settings.Storage.Production, name)
+	out := helpers.GetPath(cnr.config.Settings.Storage.Production, name)
 	filter := fmt.Sprintf("concat=n=%d:v=1:a=1[v][a]", inputCount)
 
 	commandArgs = append(
@@ -155,7 +155,7 @@ func (cnr *videoController) GetVideosFromInstagramUser(user *goinsta.User, from 
 }
 
 func (cnr *videoController) RemoveVideo(uniqueId string) {
-	path := fmt.Sprintf("%s/%s.mp4", cnr.config.Settings.Storage.Finished, uniqueId)
+	path := helpers.GetPath(cnr.config.Settings.Storage.Finished, uniqueId)
 	err := os.Remove(path)
 	helpers.PanicOnError(err)
 }

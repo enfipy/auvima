@@ -59,11 +59,11 @@ func (cnr *videoController) SaveCoub(coub *models.Coub) *models.Video {
 	}
 
 	mp4Path, mp4Link := cnr.GetMediaInfo(coub.Permalink, "mp4", &coub.FileVersions.HTML5.Video)
-	rmVideo := DownloadCoub(mp4Path, mp4Link)
+	rmVideo := helpers.DownloadCoub(mp4Path, mp4Link)
 	defer rmVideo()
 
 	mp3Path, mp3Link := cnr.GetMediaInfo(coub.Permalink, "mp3", &coub.FileVersions.HTML5.Audio)
-	rmAudio := DownloadFile(mp3Path, mp3Link)
+	rmAudio := helpers.DownloadFile(mp3Path, mp3Link)
 	defer rmAudio()
 
 	loopTimes := 1
@@ -110,9 +110,9 @@ func (cnr *videoController) GenerateProductionVideo() *models.Production {
 		panic(errors.New("Can not generate video. No prepared videos"))
 	}
 
-	op := GetPath(cnr.config.Settings.Storage.Static, "op")
-	end := GetPath(cnr.config.Settings.Storage.Static, "end")
-	frame25 := GetPath(cnr.config.Settings.Storage.Static, "25frame")
+	op := helpers.GetPath(cnr.config.Settings.Storage.Static, "op")
+	end := helpers.GetPath(cnr.config.Settings.Storage.Static, "end")
+	frame25 := helpers.GetPath(cnr.config.Settings.Storage.Static, "25frame")
 
 	var currentVideosLenth int
 	var currentDuration int64
