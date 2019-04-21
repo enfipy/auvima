@@ -95,3 +95,20 @@ func (ucs *videoUsecase) GetVideo(uniqueId string) *models.Video {
 	}
 	return &video
 }
+
+func (ucs *videoUsecase) SaveProd(uniqueId string, duration int64) *models.Production {
+	prod := &models.Production{
+		Id:        uuid.New(),
+		UniqueId:  uniqueId,
+		Duration:  duration,
+		CreatedAt: time.Now().Unix(),
+	}
+
+	ucs.pc.Exec(`
+		INSERT INTO prods(id, unique_id, duration, created_at)
+		VALUES($1, $2, $3, $4)
+		`, prod.Id, prod.UniqueId, prod.Duration, prod.CreatedAt,
+	)
+
+	return prod
+}

@@ -2,25 +2,31 @@ package delivery
 
 import (
 	"errors"
+	"log"
 
+	"github.com/enfipy/auvima/src/config"
 	"github.com/enfipy/auvima/src/helpers"
+	"github.com/enfipy/auvima/src/models"
 	"github.com/enfipy/auvima/src/services/video"
 
 	echoHTTP "github.com/labstack/echo"
 )
 
 type videoServer struct {
+	config          *config.Config
 	videoController video.Controller
 }
 
-func NewDelivery(echo *echoHTTP.Echo, videoController video.Controller) {
+func NewDelivery(echo *echoHTTP.Echo, config *config.Config, videoController video.Controller) {
 	server := &videoServer{
+		config:          config,
 		videoController: videoController,
 	}
 
 	echo.GET("/api/v1/video/coub", helpers.Handle(server.SaveCoub))
 	echo.GET("/api/v1/video/coubs", helpers.Handle(server.GetCoubs))
 	echo.GET("/api/v1/video/gen", helpers.Handle(server.GenerateVideo))
+	echo.GET("/api/v1/video/instagram", helpers.Handle(server.GetInstagramVideos))
 }
 
 func (server *videoServer) SaveCoub(ctx echoHTTP.Context) interface{} {
@@ -45,6 +51,16 @@ func (server *videoServer) GetCoubs(ctx echoHTTP.Context) interface{} {
 		server.videoController.SaveCoub(&coub)
 	}
 	return coubs
+}
+
+func (server *videoServer) GetInstagramVideos(_ echoHTTP.Context) interface{} {
+	var videos []models.Video
+	for _, account := range server.config.Settings.Instagram.MaterialAccounts {
+		log.Print("Loading videos from " + account)
+		createdVideos := server.videoController.GetInstagramVideos(account, 3)
+		videos = append(videos, createdVideos...)
+	}
+	return videos
 }
 
 func (server *videoServer) GenerateVideo(_ echoHTTP.Context) interface{} {

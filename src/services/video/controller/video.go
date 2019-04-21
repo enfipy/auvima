@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/enfipy/auvima/src/helpers"
 	"github.com/enfipy/auvima/src/models"
@@ -70,6 +71,7 @@ func (cnr *videoController) ScaleAndLoopVideo(mp4Path, mp3Path, uniqueId string,
 		"-filter_complex", filter,
 		"-map", "0", "-map", "1",
 		"-vcodec", "libx264",
+		"-filter:a", "loudnorm",
 		"-t", duration,
 		"-y", out,
 	}
@@ -84,7 +86,7 @@ func (cnr *videoController) ScaleAndLoopVideo(mp4Path, mp3Path, uniqueId string,
 	return durations[0]
 }
 
-func (cnr *videoController) ConcatVideo(videos []models.Video, op, end, frame25 string) int64 {
+func (cnr *videoController) ConcatVideo(videos []models.Video, op, end, frame25 string) (string, int64) {
 	commandArgs := []string{"-i", op}
 	for _, video := range videos {
 		path := GetPath(cnr.config.Settings.Storage.Finished, video.UniqueId)
@@ -123,7 +125,7 @@ func (cnr *videoController) ConcatVideo(videos []models.Video, op, end, frame25 
 	}
 	helpers.PanicOnError(err)
 
-	return durations[0]
+	return name, durations[0]
 }
 
 func (cnr *videoController) GetVideosFromInstagramUser(user *goinsta.User, from string, limit int) map[string]string {
@@ -150,4 +152,10 @@ func (cnr *videoController) GetVideosFromInstagramUser(user *goinsta.User, from 
 		}
 	}
 	return videos
+}
+
+func (cnr *videoController) RemoveVideo(uniqueId string) {
+	path := fmt.Sprintf("%s/%s.mp4", cnr.config.Settings.Storage.Finished, uniqueId)
+	err := os.Remove(path)
+	helpers.PanicOnError(err)
 }

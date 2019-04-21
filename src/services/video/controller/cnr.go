@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"strconv"
 	"time"
 
@@ -105,7 +104,7 @@ func (cnr *videoController) GetCoubs(tag, order string, page, perPage int) []mod
 	return res.Coubs
 }
 
-func (cnr *videoController) GenerateProductionVideo() {
+func (cnr *videoController) GenerateProductionVideo() *models.Production {
 	videos := cnr.videoUsecase.GetUnusedVideos(50)
 	if len(videos) <= 0 {
 		panic(errors.New("Can not generate video. No prepared videos"))
@@ -129,11 +128,14 @@ func (cnr *videoController) GenerateProductionVideo() {
 	}
 
 	videos = videos[:currentVideosLenth]
-	duration := cnr.ConcatVideo(videos, op, end, frame25)
+	name, duration := cnr.ConcatVideo(videos, op, end, frame25)
 
-	log.Print(duration)
-
-	// Todo: Save prod video. Update videos. Set used = true
+	for _, video := range videos {
+		cnr.videoUsecase.UseVideo(video.UniqueId)
+		cnr.RemoveVideo(video.UniqueId)
+	}
+	prod := cnr.videoUsecase.SaveProd(name, duration)
+	return prod
 }
 
 func (cnr *videoController) GetInstagramVideos(username string, limit int) []models.Video {

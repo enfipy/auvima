@@ -34,13 +34,7 @@ func InitServices(cnfg *config.Config) (*echo.Echo, func()) {
 
 	videoUcs := videoUsecase.NewUsecase(cnfg, pc, locker)
 	videoCnr := videoController.NewController(cnfg, videoUcs, coubClient, instaClient)
-	videoDeliveryHttp.NewDelivery(echo, videoCnr)
-
-	// Todo: Move to cron
-	// for _, account := range cnfg.Settings.Instagram.MaterialAccounts {
-	// 	log.Print("Loading videos from " + account)
-	// 	videoCnr.GetInstagramVideos(account, 1)
-	// }
+	videoDeliveryHttp.NewDelivery(echo, cnfg, videoCnr)
 
 	return echo, func() {}
 }
