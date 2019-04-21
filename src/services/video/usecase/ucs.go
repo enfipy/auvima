@@ -26,20 +26,21 @@ func NewUsecase(cnfg *config.Config, pc *helpers.PostgresConnection, locker *loc
 	}
 }
 
-func (ucs *videoUsecase) SaveVideo(uniqueId string, origin models.VideoOrigin) *models.Video {
+func (ucs *videoUsecase) SaveVideo(uniqueId string, duration int64, origin models.VideoOrigin) *models.Video {
 	video := &models.Video{
 		Id:        uuid.New(),
 		UniqueId:  uniqueId,
 		Used:      false,
+		Duration:  duration,
 		Status:    models.VideoStatus_Normal,
 		Origin:    origin,
 		CreatedAt: time.Now().Unix(),
 	}
 
 	ucs.pc.Exec(`
-		INSERT INTO videos
-		VALUES($1, $2, $3, $4, $5, $6)
-		`, video.Id, video.UniqueId, video.Used, video.Status, video.Origin, video.CreatedAt,
+		INSERT INTO videos(id, unique_id, used, duration, status, origin, created_at)
+		VALUES($1, $2, $3, $4, $5, $6, $7)
+		`, video.Id, video.UniqueId, video.Used, video.Duration, video.Status, video.Origin, video.CreatedAt,
 	)
 
 	return video
@@ -47,7 +48,7 @@ func (ucs *videoUsecase) SaveVideo(uniqueId string, origin models.VideoOrigin) *
 
 func (ucs *videoUsecase) GetUnusedVideos(limit int32) []models.Video {
 	rows := ucs.pc.QueryMany(`
-		SELECT id, unique_id, used, status, origin, created_at
+		SELECT id, unique_id, used, duration, status, origin, created_at
 		FROM videos
 		WHERE used = FALSE
 		ORDER BY RANDOM()
@@ -59,7 +60,7 @@ func (ucs *videoUsecase) GetUnusedVideos(limit int32) []models.Video {
 	for rows.Next() {
 		video := models.Video{}
 
-		rows.Scan(&video.Id, &video.UniqueId, &video.Used, &video.Status, &video.Origin, &video.CreatedAt)
+		rows.Scan(&video.Id, &video.UniqueId, &video.Used, &video.Duration, &video.Status, &video.Origin, &video.CreatedAt)
 		if !helpers.ValidateUUID(video.Id) {
 			continue
 		}
@@ -77,4 +78,20 @@ func (ucs *videoUsecase) UseVideo(uniqueId string) {
 		WHERE unique_id = $1
 		`, uniqueId,
 	)
+}
+
+func (ucs *videoUsecase) GetVideo(uniqueId string) *models.Video {
+	getResult := ucs.pc.Query(`
+		SELECT id, unique_id, used, duration, status, origin, created_at
+		FROM videos
+		WHERE unique_id = $1
+	`, uniqueId)
+
+	video := models.Video{}
+	getResult(&video.Id, &video.UniqueId, &video.Used, &video.Duration, &video.Status, &video.Origin, &video.CreatedAt)
+
+	if !helpers.ValidateUUID(video.Id) {
+		return nil
+	}
+	return &video
 }

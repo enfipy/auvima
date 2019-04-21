@@ -2,10 +2,11 @@ package controller
 
 import (
 	"fmt"
-	"os/exec"
 
 	"github.com/enfipy/auvima/src/helpers"
 	"github.com/enfipy/auvima/src/models"
+
+	goinsta "github.com/ahmdrz/goinsta/v2"
 )
 
 func (cnr *videoController) GetMediaInfo(permalink, format string, media *models.Media) (path, link string) {
@@ -18,12 +19,13 @@ func (cnr *videoController) GetMediaInfo(permalink, format string, media *models
 	return
 }
 
-func (cnr *videoController) ScaleVideo(uniqueId, url string) {
+func (cnr *videoController) ScaleVideo(uniqueId, url string) int64 {
 	filter := "[0:0]split[main][back];" +
 		"[back]scale=1920:1080[scale];" +
 		"[scale]drawbox=x=0:y=0:w=1920:h=1080:color=black:t=1000[draw];" +
 		"[main]scale='if(gt(a,16/9),1920,-1)':'if(gt(a,16/9),-1,1080)'[proc];" +
-		"[draw][proc]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[fhd]; [fhd]setsar=1/1[sarfix]"
+		"[draw][proc]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[fhd];" +
+		"[fhd]setsar=1/1[sarfix]"
 
 	path := fmt.Sprintf("%s/%s.mp4", cnr.config.Settings.Storage.Temporary, uniqueId)
 	rmFile := DownloadFile(path, url)
@@ -33,24 +35,31 @@ func (cnr *videoController) ScaleVideo(uniqueId, url string) {
 	commandArgs := []string{
 		"-i", path,
 		"-filter_complex", filter,
-		"-map", "[sarfix]", "-map", "0",
+		"-map", "[sarfix]", "-map", "0:1",
+		"-vcodec", "libx264",
+		"-filter:a", "loudnorm",
 		"-y", out,
 	}
+	output, err := helpers.ExecFFMPEG(commandArgs)
 
-	cmd := exec.Command("ffmpeg", commandArgs...)
-	err := cmd.Run()
+	durations := helpers.GetDurations(output)
+	if len(durations) <= 0 {
+		helpers.PanicOnError(err)
+	}
 	helpers.PanicOnError(err)
+
+	return durations[0]
 }
 
-func (cnr *videoController) ScaleAndLoopVideo(mp4Path, mp3Path, uniqueId string, dur float64, loopTimes int) {
-
+func (cnr *videoController) ScaleAndLoopVideo(mp4Path, mp3Path, uniqueId string, dur float64, loopTimes int) int64 {
 	duration := fmt.Sprintf("%f", dur)
 	out := GetPath(cnr.config.Settings.Storage.Finished, uniqueId)
 	filter := fmt.Sprintf("[0:0]split[main][back];"+
 		"[back]scale=1920:1080[scale];"+
 		"[scale]drawbox=x=0:y=0:w=1920:h=1080:color=black:t=1000[draw];"+
 		"[main]scale='if(gt(a,16/9),1920,-1)':'if(gt(a,16/9),-1,1080)'[proc];"+
-		"[draw][proc]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[fhd]; [fhd]setsar=1/1[sarfix];"+
+		"[draw][proc]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[fhd];"+
+		"[fhd]setsar=1/1[sarfix];"+
 		"[sarfix]loop=%d:size=9999:start=0",
 		loopTimes,
 	)
@@ -60,17 +69,22 @@ func (cnr *videoController) ScaleAndLoopVideo(mp4Path, mp3Path, uniqueId string,
 		"-i", mp3Path,
 		"-filter_complex", filter,
 		"-map", "0", "-map", "1",
+		"-vcodec", "libx264",
 		"-t", duration,
 		"-y", out,
 	}
+	output, err := helpers.ExecFFMPEG(commandArgs)
 
-	cmd := exec.Command("ffmpeg", commandArgs...)
-
-	err := cmd.Run()
+	durations := helpers.GetDurations(output)
+	if len(durations) <= 0 {
+		helpers.PanicOnError(err)
+	}
 	helpers.PanicOnError(err)
+
+	return durations[0]
 }
 
-func (cnr *videoController) ConcatVideo(videos []models.Video, op, frame25, end string) {
+func (cnr *videoController) ConcatVideo(videos []models.Video, op, end, frame25 string) int64 {
 	commandArgs := []string{"-i", op}
 	for _, video := range videos {
 		path := GetPath(cnr.config.Settings.Storage.Finished, video.UniqueId)
@@ -90,19 +104,50 @@ func (cnr *videoController) ConcatVideo(videos []models.Video, op, frame25, end 
 	name, err := helpers.GenRandString(5)
 	helpers.PanicOnError(err)
 
-	// Todo: Make special quality for youtube
 	out := GetPath(cnr.config.Settings.Storage.Production, name)
 	filter := fmt.Sprintf("concat=n=%d:v=1:a=1[v][a]", inputCount)
 
 	commandArgs = append(
 		commandArgs,
+		"-filter_complex", filter,
 		"-map", "[v]",
 		"-map", "[a]",
-		"-filter_complex", filter,
+		"-vcodec", "libx264",
 		"-y", out,
 	)
-	cmd := exec.Command("ffmpeg", commandArgs...)
+	output, err := helpers.ExecFFMPEG(commandArgs)
 
-	err = cmd.Run()
+	durations := helpers.GetDurations(output)
+	if len(durations) <= 0 {
+		helpers.PanicOnError(err)
+	}
 	helpers.PanicOnError(err)
+
+	return durations[0]
+}
+
+func (cnr *videoController) GetVideosFromInstagramUser(user *goinsta.User, from string, limit int) map[string]string {
+	media := user.Feed(from)
+	videos := map[string]string{}
+	for media.Next() {
+		for _, item := range media.Items {
+			if len(item.Videos) != 0 {
+				for _, itemVideo := range item.Videos {
+					if len(videos) >= limit {
+						return videos
+					}
+
+					uniqueId := item.Code
+
+					existedVideo := cnr.videoUsecase.GetVideo(uniqueId)
+					if existedVideo != nil {
+						continue
+					}
+
+					videos[uniqueId] = itemVideo.URL
+				}
+			}
+		}
+	}
+	return videos
 }

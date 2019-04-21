@@ -3,11 +3,15 @@ package models
 import "github.com/google/uuid"
 
 type Video struct {
-	Id        uuid.UUID
-	UniqueId  string
-	Used      bool
-	Status    VideoStatus
-	Origin    VideoOrigin
+	Id uuid.UUID
+
+	UniqueId string
+	Used     bool
+	Duration int64
+
+	Status VideoStatus
+	Origin VideoOrigin
+
 	CreatedAt int64
 }
 

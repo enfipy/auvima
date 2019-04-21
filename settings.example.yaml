@@ -10,9 +10,14 @@ instagram:
     login: "login"
     password: "password"
   suitability_time: 96
+  material_accounts:
+    - instagram
 
 storage:
   tmp: "/videos/tmp"
   finished: "/videos/finished"
   static: "/videos/static"
   prod: "/videos/prod"
+
+video:
+  length: 300000

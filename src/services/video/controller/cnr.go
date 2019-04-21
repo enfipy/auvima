@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"strconv"
 	"time"
 
@@ -53,6 +54,11 @@ func (cnr *videoController) GetCoub(permalink string) *models.Coub {
 }
 
 func (cnr *videoController) SaveCoub(coub *models.Coub) *models.Video {
+	existedVideo := cnr.videoUsecase.GetVideo(coub.Permalink)
+	if existedVideo != nil {
+		return existedVideo
+	}
+
 	mp4Path, mp4Link := cnr.GetMediaInfo(coub.Permalink, "mp4", &coub.FileVersions.HTML5.Video)
 	rmVideo := DownloadCoub(mp4Path, mp4Link)
 	defer rmVideo()
@@ -61,13 +67,6 @@ func (cnr *videoController) SaveCoub(coub *models.Coub) *models.Video {
 	rmAudio := DownloadFile(mp3Path, mp3Link)
 	defer rmAudio()
 
-	cnr.SaveFinishedVideo(mp4Path, mp3Path, coub)
-	video := cnr.videoUsecase.SaveVideo(coub.Permalink, models.VideoOrigin_Coub)
-
-	return video
-}
-
-func (cnr *videoController) SaveFinishedVideo(mp4Path, mp3Path string, coub *models.Coub) {
 	loopTimes := 1
 	dur := coub.Duration
 	if coub.Duration <= 5 {
@@ -77,7 +76,10 @@ func (cnr *videoController) SaveFinishedVideo(mp4Path, mp3Path string, coub *mod
 		dur = 10
 	}
 
-	cnr.ScaleAndLoopVideo(mp4Path, mp3Path, coub.Permalink, dur, loopTimes)
+	duration := cnr.ScaleAndLoopVideo(mp4Path, mp3Path, coub.Permalink, dur, loopTimes)
+	video := cnr.videoUsecase.SaveVideo(coub.Permalink, duration, models.VideoOrigin_Coub)
+
+	return video
 }
 
 func (cnr *videoController) GetCoubs(tag, order string, page, perPage int) []models.Coub {
@@ -104,7 +106,7 @@ func (cnr *videoController) GetCoubs(tag, order string, page, perPage int) []mod
 }
 
 func (cnr *videoController) GenerateProductionVideo() {
-	videos := cnr.videoUsecase.GetUnusedVideos(10)
+	videos := cnr.videoUsecase.GetUnusedVideos(50)
 	if len(videos) <= 0 {
 		panic(errors.New("Can not generate video. No prepared videos"))
 	}
@@ -113,9 +115,25 @@ func (cnr *videoController) GenerateProductionVideo() {
 	end := GetPath(cnr.config.Settings.Storage.Static, "end")
 	frame25 := GetPath(cnr.config.Settings.Storage.Static, "25frame")
 
-	cnr.ConcatVideo(videos, op, end, frame25)
+	var currentVideosLenth int
+	var currentDuration int64
+	for _, video := range videos {
+		if currentDuration >= cnr.config.Settings.Video.Length {
+			break
+		}
+		currentVideosLenth++
+		currentDuration += video.Duration
+	}
+	if currentDuration < cnr.config.Settings.Video.Length {
+		panic(errors.New("Not enough material to generate valid duration video"))
+	}
 
-	// Todo: Update video. Set used = true
+	videos = videos[:currentVideosLenth]
+	duration := cnr.ConcatVideo(videos, op, end, frame25)
+
+	log.Print(duration)
+
+	// Todo: Save prod video. Update videos. Set used = true
 }
 
 func (cnr *videoController) GetInstagramVideos(username string, limit int) []models.Video {
@@ -126,12 +144,12 @@ func (cnr *videoController) GetInstagramVideos(username string, limit int) []mod
 	timestamp := time.Now().Add(-sh * time.Hour).Unix()
 	from := strconv.FormatInt(timestamp, 10)
 
-	videos := GetVideosFromInstagramUser(user, from, limit)
+	videos := cnr.GetVideosFromInstagramUser(user, from, limit)
 
 	var savedVideos []models.Video
 	for uniqueId, url := range videos {
-		cnr.ScaleVideo(uniqueId, url)
-		video := cnr.videoUsecase.SaveVideo(uniqueId, models.VideoOrigin_Instagram)
+		duration := cnr.ScaleVideo(uniqueId, url)
+		video := cnr.videoUsecase.SaveVideo(uniqueId, duration, models.VideoOrigin_Instagram)
 		savedVideos = append(savedVideos, *video)
 	}
 

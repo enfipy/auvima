@@ -9,6 +9,5 @@ type Controller interface {
 
 	GetInstagramVideos(username string, limit int) []models.Video
 
-	SaveFinishedVideo(mp4Path, mp3Path string, coub *models.Coub)
 	GenerateProductionVideo()
 }

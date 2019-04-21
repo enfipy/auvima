@@ -6,6 +6,7 @@ type Settings struct {
 	Coub      Coub      `yaml:"coub"`
 	Instagram Instagram `yaml:"instagram"`
 	Storage   Storage   `yaml:"storage"`
+	Video     Video     `yaml:"video"`
 }
 
 /* Inner structs */
@@ -29,9 +30,10 @@ type (
 // Instagram
 type (
 	Instagram struct {
-		CredsPath        string `yaml:"creds_path"`
-		Creds            Creds  `yaml:"creds"`
-		SuitabilityHours uint64 `yaml:"suitability_hours"`
+		CredsPath        string   `yaml:"creds_path"`
+		Creds            Creds    `yaml:"creds"`
+		SuitabilityHours uint64   `yaml:"suitability_hours"`
+		MaterialAccounts []string `yaml:"material_accounts"`
 	}
 
 	Creds struct {
@@ -46,4 +48,9 @@ type Storage struct {
 	Finished   string `yaml:"finished"`
 	Static     string `yaml:"static"`
 	Production string `yaml:"prod"`
+}
+
+// Video
+type Video struct {
+	Length int64 `yaml:"length"`
 }

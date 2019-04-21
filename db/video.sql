@@ -1,7 +1,8 @@
 CREATE TABLE videos (
   id UUID PRIMARY KEY,
 
-  unique_id text NOT NULL,
+  unique_id text NOT NULL UNIQUE,
+  duration bigint NOT NULL,
   used boolean NOT NULL,
 
   status smallint NOT NULL,
