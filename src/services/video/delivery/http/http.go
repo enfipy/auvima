@@ -58,7 +58,9 @@ func (server *videoServer) GetInstagramVideos(_ echoHTTP.Context) interface{} {
 	var videos []models.Video
 	for _, account := range server.config.Settings.Instagram.MaterialAccounts {
 		log.Print("Loading videos from " + account)
-		createdVideos := server.videoController.GetInstagramVideos(account, 3)
+		limit := int(server.config.Settings.Instagram.MaterialCountToFetch)
+		createdVideos := server.videoController.GetInstagramVideos(account, limit)
+		log.Printf("Loaded %d videos", len(createdVideos))
 		videos = append(videos, createdVideos...)
 	}
 	return videos
@@ -70,6 +72,10 @@ func (server *videoServer) GenerateVideo(_ echoHTTP.Context) interface{} {
 }
 
 func (server *videoServer) UploadVideo(_ echoHTTP.Context) interface{} {
+	defer helpers.RecoverWithLog()
+
+	log.Print("Uploading production video")
 	id := server.videoController.UploadVideo()
+	log.Printf("Upload successful! Video ID: %s", id)
 	return id
 }
