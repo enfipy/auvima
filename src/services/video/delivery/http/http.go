@@ -27,6 +27,7 @@ func NewHttp(echo *echoHTTP.Echo, config *config.Config, videoController video.C
 	echo.GET("/api/v1/video/coubs", helpers.Handle(server.GetCoubs))
 	echo.GET("/api/v1/video/instagram", helpers.Handle(server.GetInstagramVideos))
 	echo.GET("/api/v1/video/gen", helpers.Handle(server.GenerateVideo))
+	echo.GET("/api/v1/video/upload", helpers.Handle(server.UploadVideo))
 }
 
 func (server *videoServer) SaveCoub(ctx echoHTTP.Context) interface{} {
@@ -66,4 +67,9 @@ func (server *videoServer) GetInstagramVideos(_ echoHTTP.Context) interface{} {
 func (server *videoServer) GenerateVideo(_ echoHTTP.Context) interface{} {
 	server.videoController.GenerateProductionVideo()
 	return nil
+}
+
+func (server *videoServer) UploadVideo(_ echoHTTP.Context) interface{} {
+	id := server.videoController.UploadVideo()
+	return id
 }
