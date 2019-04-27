@@ -179,6 +179,7 @@ func (ucs *videoUsecase) GetNextProductionVideo() *models.Production {
 		WHERE id = (
 			SELECT max(id)
 			FROM prods
+			WHERE used = false
 		)
 	`)
 

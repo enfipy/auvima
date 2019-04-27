@@ -72,8 +72,6 @@ func (server *videoServer) GenerateVideo(_ echoHTTP.Context) interface{} {
 }
 
 func (server *videoServer) UploadVideo(_ echoHTTP.Context) interface{} {
-	defer helpers.RecoverWithLog()
-
 	log.Print("Uploading production video")
 	id := server.videoController.UploadVideo()
 	log.Printf("Upload successful! Video ID: %s", id)
