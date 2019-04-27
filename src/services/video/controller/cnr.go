@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -24,12 +25,12 @@ type videoController struct {
 
 	coubClient    *helpers.CoubClient
 	instaClient   *goinsta.Instagram
-	youtubeClient *youtube.Service
+	youtubeClient *http.Client
 }
 
 func NewController(
 	cnfg *config.Config, videoUsecase video.Usecase, coubClient *helpers.CoubClient,
-	instaClient *goinsta.Instagram, youtubeClient *youtube.Service,
+	instaClient *goinsta.Instagram, youtubeClient *http.Client,
 ) video.Controller {
 	return &videoController{
 		config:       cnfg,
@@ -173,6 +174,9 @@ func (cnr *videoController) GetInstagramVideos(username string, limit int) []mod
 }
 
 func (cnr *videoController) UploadVideo() string {
+	service, err := youtube.New(cnr.youtubeClient)
+	helpers.PanicOnError(err)
+
 	prod := cnr.videoUsecase.GetNextProductionVideo()
 	if prod == nil {
 		panic(errors.New("Production video to upload not found"))
@@ -181,7 +185,7 @@ func (cnr *videoController) UploadVideo() string {
 	videos := cnr.videoUsecase.GetVideosByUsedIn(prod.Id)
 	upload, filename := cnr.PrepareYoutubeVideo(prod.Id, videos)
 
-	call := cnr.youtubeClient.Videos.Insert("snippet,status", upload)
+	call := service.Videos.Insert("snippet,status", upload)
 
 	file, err := os.Open(filename)
 	defer file.Close()

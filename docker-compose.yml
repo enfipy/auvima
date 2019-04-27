@@ -21,7 +21,7 @@ services:
       - ./videos:/videos
     environment:
       APP_ENV: development
-      SERVER_PORT: 8000
+      SERVER_PORT: 3000
 
       PGHOST: postgres
       PGPORT: 5432
@@ -29,6 +29,7 @@ services:
       PGUSER: pguser
       PGPASSWORD: pguser
     ports:
+      - 3000:3000
       - 8000:8000
     networks:
       - dev

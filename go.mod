@@ -23,7 +23,7 @@ require (
 	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/valyala/fasttemplate v1.0.1 // indirect
 	golang.org/x/crypto v0.0.0-20190418165655-df01cb2cc480 // indirect
-	golang.org/x/net v0.0.0-20190419010253-1f3472d942ba // indirect
+	golang.org/x/net v0.0.0-20190419010253-1f3472d942ba
 	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a
 	golang.org/x/sys v0.0.0-20190418153312-f0ce4c0180be // indirect
 	google.golang.org/api v0.3.2

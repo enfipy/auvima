@@ -2,13 +2,13 @@ package helpers
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"golang.org/x/oauth2"
-	youtube "google.golang.org/api/youtube/v3"
 )
 
-func InitYoutubeClient(accessToken, tokenType, refreshToken string, expiry uint64) *youtube.Service {
+func InitYoutubeClient(accessToken, tokenType, refreshToken string, expiry uint64) *http.Client {
 	ctx := context.Background()
 	tok := &oauth2.Token{
 		AccessToken:  accessToken,
@@ -18,9 +18,5 @@ func InitYoutubeClient(accessToken, tokenType, refreshToken string, expiry uint6
 	}
 	cnfg := oauth2.Config{}
 	client := cnfg.Client(ctx, tok)
-
-	service, err := youtube.New(client)
-	PanicOnError(err)
-
-	return service
+	return client
 }
