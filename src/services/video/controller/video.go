@@ -187,7 +187,7 @@ func (cnr *videoController) PrepareYoutubeVideo(videoNumber uint32, videos []mod
 			links += fmt.Sprintf("%d:%d - https://www.instagram.com/p/%s\n", timeM, timeS, video.UniqueId)
 		}
 	}
-	description := videoCnfg.Description + links
+	description := fmt.Sprintf(videoCnfg.Description, links)
 
 	video := &youtube.Video{
 		Snippet: &youtube.VideoSnippet{
