@@ -174,7 +174,14 @@ func (cnr *videoController) GetInstagramVideos(username string, limit int) []mod
 }
 
 func (cnr *videoController) UploadVideo() string {
-	service, err := youtube.New(cnr.youtubeClient)
+	youtubeClient := helpers.InitYoutubeClient(
+		cnr.config.Settings.Youtube.Creds.AccessToken,
+		cnr.config.Settings.Youtube.Creds.TokenType,
+		cnr.config.Settings.Youtube.Creds.RefreshToken,
+		cnr.config.Settings.Youtube.Creds.Expiry,
+	)
+
+	service, err := youtube.New(youtubeClient)
 	helpers.PanicOnError(err)
 
 	prod := cnr.videoUsecase.GetNextProductionVideo()

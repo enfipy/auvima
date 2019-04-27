@@ -12,9 +12,9 @@ func InitYoutubeClient(accessToken, tokenType, refreshToken string, expiry uint6
 	ctx := context.Background()
 	tok := &oauth2.Token{
 		AccessToken:  accessToken,
-		TokenType:    tokenType,
-		Expiry:       time.Now().Add(time.Duration(expiry) * time.Second),
 		RefreshToken: refreshToken,
+		Expiry:       time.Now().Add(time.Duration(expiry) * time.Second),
+		TokenType:    tokenType,
 	}
 	cnfg := oauth2.Config{}
 	client := cnfg.Client(ctx, tok)
