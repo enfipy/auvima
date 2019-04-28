@@ -173,10 +173,8 @@ func (cnr *videoController) PrepareYoutubeVideo(videoNumber uint32, videos []mod
 	)
 
 	var links string
-	var dur int64
+	var dur int64 = cnr.config.Settings.Video.OpLength + cnr.config.Settings.Video.FrameLength
 	for _, video := range videos {
-		dur += video.Duration + cnr.config.Settings.Video.FrameLength
-
 		timeM := dur / helpers.Minute
 		timeS := (dur % helpers.Minute) / helpers.Second
 
@@ -186,6 +184,8 @@ func (cnr *videoController) PrepareYoutubeVideo(videoNumber uint32, videos []mod
 		if video.Origin == models.VideoOrigin_Instagram {
 			links += fmt.Sprintf("%d:%d - https://www.instagram.com/p/%s\n", timeM, timeS, video.UniqueId)
 		}
+
+		dur += video.Duration + cnr.config.Settings.Video.FrameLength
 	}
 	description := fmt.Sprintf(videoCnfg.Description, links)
 

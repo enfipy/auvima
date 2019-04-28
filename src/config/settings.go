@@ -76,6 +76,7 @@ type (
 		Description string  `yaml:"description"`
 		Length      int64   `yaml:"length"`
 		FrameLength int64   `yaml:"frame_length"`
+		OpLength    int64   `yaml:"op_length"`
 		Timings     Timings `yaml:"timings"`
 	}
 
