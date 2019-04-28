@@ -52,7 +52,7 @@ func (cnr *videoController) ScaleVideo(uniqueId, url string) int64 {
 	}
 	helpers.PanicOnError(err)
 
-	return durations[0]
+	return durations[len(durations)-1]
 }
 
 func (cnr *videoController) ScaleAndLoopVideo(mp4Path, mp3Path, uniqueId string, dur float64, loopTimes int) int64 {
@@ -86,7 +86,7 @@ func (cnr *videoController) ScaleAndLoopVideo(mp4Path, mp3Path, uniqueId string,
 	}
 	helpers.PanicOnError(err)
 
-	return durations[0]
+	return durations[len(durations)-1]
 }
 
 func (cnr *videoController) ConcatVideo(videos []models.Video, op, end, frame25 string) int64 {
@@ -106,7 +106,11 @@ func (cnr *videoController) ConcatVideo(videos []models.Video, op, end, frame25 
 	}
 
 	productionVideoCount := cnr.videoUsecase.GetProductionVideoCount()
-	productionVideoCount++
+	if productionVideoCount <= 0 {
+		productionVideoCount = 1
+	} else {
+		productionVideoCount++
+	}
 	name := strconv.FormatInt(productionVideoCount, 10)
 
 	out := helpers.GetPath(cnr.config.Settings.Storage.Production, name)
@@ -128,7 +132,7 @@ func (cnr *videoController) ConcatVideo(videos []models.Video, op, end, frame25 
 	}
 	helpers.PanicOnError(err)
 
-	return durations[0]
+	return durations[len(durations)-1]
 }
 
 func (cnr *videoController) GetVideosFromInstagramUser(user *goinsta.User, from string, limit int) map[string]string {

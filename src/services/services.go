@@ -35,12 +35,12 @@ func InitServices(cnfg *config.Config) (start func(list net.Listener), close fun
 		cnfg.Settings.Instagram.Creds.Password,
 		cnfg.Settings.Instagram.CredsPath,
 	)
-	youtubeClient := helpers.InitYoutubeClient(
-		cnfg.Settings.Youtube.Creds.AccessToken,
-		cnfg.Settings.Youtube.Creds.TokenType,
-		cnfg.Settings.Youtube.Creds.RefreshToken,
-		cnfg.Settings.Youtube.Creds.Expiry,
-	)
+	youtubeClient := helpers.InitYoutubeClient()
+	// 	cnfg.Settings.Youtube.Creds.AccessToken,
+	// 	cnfg.Settings.Youtube.Creds.TokenType,
+	// 	cnfg.Settings.Youtube.Creds.RefreshToken,
+	// 	cnfg.Settings.Youtube.Creds.Expiry,
+	// )
 
 	videoUcs := videoUsecase.NewUsecase(cnfg, pc, locker)
 	videoCnr := videoController.NewController(cnfg, videoUcs, coubClient, instaClient, youtubeClient)
