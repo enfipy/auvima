@@ -9,6 +9,6 @@ type Controller interface {
 
 	GetInstagramVideos(username string, limit int) []models.Video
 
-	GenerateProductionVideo() *models.Production
+	GenerateProductionVideo()
 	UploadVideo() string
 }
