@@ -46,8 +46,8 @@ func (server *videoServer) GenerateProductionVideo() {
 	defer helpers.RecoverWithLog()
 
 	log.Print("Generating production video")
-	prod := server.videoController.GenerateProductionVideo()
-	log.Printf("Generated production video with %d.mp4 name", prod.Id)
+	server.videoController.GenerateProductionVideo()
+	log.Print("Successfully generated production video")
 }
 
 func (server *videoServer) UploadVideo() {

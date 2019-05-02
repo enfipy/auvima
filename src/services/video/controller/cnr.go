@@ -111,7 +111,7 @@ func (cnr *videoController) GetCoubs(tag, order string, page, perPage int) []mod
 	return res.Coubs
 }
 
-func (cnr *videoController) GenerateProductionVideo() *models.Production {
+func (cnr *videoController) GenerateProductionVideo() {
 	videos := cnr.videoUsecase.GetUnusedVideos(50)
 	if len(videos) <= 0 {
 		panic(errors.New("Can not generate video. No prepared videos"))
@@ -149,8 +149,8 @@ func (cnr *videoController) GenerateProductionVideo() *models.Production {
 		cnr.RemoveVideo(video.UniqueId)
 	}
 
-	prod := cnr.videoUsecase.SaveProd(duration)
-	return prod
+	cnr.videoUsecase.SaveProd(duration)
+	return
 }
 
 func (cnr *videoController) GetInstagramVideos(username string, limit int) []models.Video {
@@ -175,11 +175,6 @@ func (cnr *videoController) GetInstagramVideos(username string, limit int) []mod
 
 func (cnr *videoController) UploadVideo() string {
 	youtubeClient := helpers.InitYoutubeClient()
-	// 	cnr.config.Settings.Youtube.Creds.AccessToken,
-	// 	cnr.config.Settings.Youtube.Creds.TokenType,
-	// 	cnr.config.Settings.Youtube.Creds.RefreshToken,
-	// 	cnr.config.Settings.Youtube.Creds.Expiry,
-	// )
 
 	service, err := youtube.New(youtubeClient)
 	helpers.PanicOnError(err)

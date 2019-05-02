@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -8,9 +9,9 @@ import (
 
 	"github.com/enfipy/auvima/src/helpers"
 	"github.com/enfipy/auvima/src/models"
-	youtube "google.golang.org/api/youtube/v3"
 
 	goinsta "github.com/ahmdrz/goinsta/v2"
+	youtube "google.golang.org/api/youtube/v3"
 )
 
 func (cnr *videoController) GetMediaInfo(permalink, format string, media *models.Media) (path, link string) {
@@ -90,10 +91,13 @@ func (cnr *videoController) ScaleAndLoopVideo(mp4Path, mp3Path, uniqueId string,
 }
 
 func (cnr *videoController) ConcatVideo(videos []models.Video, op, end, frame25 string) int64 {
+	var duration int64 = cnr.config.Settings.Video.OpLength + cnr.config.Settings.Video.FrameLength
 	commandArgs := []string{"-i", op}
+
 	for _, video := range videos {
 		path := helpers.GetPath(cnr.config.Settings.Storage.Finished, video.UniqueId)
 		commandArgs = append(commandArgs, "-i", path, "-i", frame25)
+		duration += video.Duration
 	}
 	commandArgs = commandArgs[:len(commandArgs)-2]
 	commandArgs = append(commandArgs, "-i", end)
@@ -125,14 +129,14 @@ func (cnr *videoController) ConcatVideo(videos []models.Video, op, end, frame25 
 		"-y", out,
 	)
 	output, err := helpers.ExecFFMPEG(commandArgs)
+	helpers.PanicOnError(err)
 
 	durations := helpers.GetDurations(output)
 	if len(durations) <= 0 {
-		helpers.PanicOnError(err)
+		helpers.PanicOnError(errors.New("Fatal: No durations in output"))
 	}
-	helpers.PanicOnError(err)
 
-	return durations[len(durations)-1]
+	return duration
 }
 
 func (cnr *videoController) GetVideosFromInstagramUser(user *goinsta.User, from string, limit int) map[string]string {
